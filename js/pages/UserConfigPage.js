@@ -1,11 +1,11 @@
 (function($,defaultConfig,JUtil){
     $(function(){
-        var VERSION="0.1.5";
         var userConfig={};
+        var accountList={};
 
         if(localStorage['UserConfig']){
             userConfig = JSON.parse(localStorage['UserConfig']);
-            if(userConfig.version!==VERSION){
+            if(userConfig.version!==defaultConfig.version){
                 userConfig = defaultConfig;
                 localStorage['UserConfig'] = JSON.stringify(defaultConfig);
             }
@@ -13,6 +13,21 @@
             userConfig = defaultConfig;
             localStorage['UserConfig'] = JSON.stringify(defaultConfig);
         }
+
+        if(localStorage['AccountList']){
+            accountList = JSON.parse(localStorage['AccountList']);
+        }else{
+            localStorage['AccountList'] = JSON.stringify(accountList);
+        }
+
+
+        var saveAccountList=function(){
+            console.log('saveAccountLIst',accountList);
+            localStorage['AccountList']=JSON.stringify(accountList);
+            chrome.runtime.sendMessage({action:'reloadAccountList'},function(msg){
+                console.log(msg);
+            });
+        };
 
         var saveConfig=function(){
             localStorage['UserConfig'] = JSON.stringify(userConfig);
@@ -56,6 +71,7 @@
             saveConfig();
         });
         $('#map01,#map05,#map02,#map10,#map07,#map11,#map13,#map18,#map17,#map16').each(function(){
+                console.log('userConfig.build',userConfig.build);
               if(userConfig.build['map'][$(this).attr('id')]['isbuild']){
                   $(this).attr('checked','checked');
               }
@@ -253,6 +269,67 @@
             window.location.reload(true);
             //todo 页面刷新后还是选中当前的TAB标签
         });
+
+
+        /**
+         * 帐号管理
+         */
+        (function(accountList){
+            var account=null;
+
+            var accountHtml='';
+
+            console.log('sss',accountList);
+
+           //-----------将accountList的内容以表格的形式显示出来------------
+            for(account in accountList){
+                var template='<tr><td><input type="text" value="@accountName"/></td><td><input type="text" value="@gameName"/></td><td><input type="text" value="@step"/></td><td><button class="btn btn-small btn-danger"><i class="icon-white icon-remove-circle"></i>删除</button></td></tr>';
+                accountHtml+=template;
+                accountHtml=accountHtml.replace('@accountName',account);
+                accountHtml=accountHtml.replace('@gameName',accountList[account]['gameName']);
+                accountHtml=accountHtml.replace('@step',accountList[account]['step']);
+            }
+            $('#accountListTable').find('tbody').prepend(accountHtml);
+            //------------------------------
+
+
+            $('.J-addRow').on('click',function(){
+                var html='<tr><td><input type="text"/></td><td><input type="text"/></td><td><input type="text" value="-1"/></td><td><button class="btn btn-small btn-danger"><i class="icon-white icon-remove-circle"></i>删除</button></td></tr>';
+                $('#accountListTable').find('tbody').append(html);
+            });
+
+            $('#accountListTable').on('change','input',function(){
+               var $tr=$(this).parents('tr');
+               var tmpAccount={};
+               var accountName=$tr.find('input').eq(0).val();
+                tmpAccount[accountName]={};
+                tmpAccount[accountName]['gameName']=$tr.find('input').eq(1).val();
+                tmpAccount[accountName]['step']=$tr.find('input').eq(2).val();
+
+               $.extend(accountList,tmpAccount);
+               saveAccountList();
+            }).on('click','button',function(){
+                var $tr=$(this).parents('tr');
+                    var accountName=$tr.find('input').eq(0).val();
+                    delete(accountList[accountName]);
+                    saveAccountList();
+                $tr.remove();
+            });
+
+
+
+
+
+
+        })(accountList);
+
+
+
+
+
+
+
+
     });
 
 
