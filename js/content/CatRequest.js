@@ -93,6 +93,7 @@ var CatRequest=(function(){
                  });
              },
 
+
             /**
              * 自动建造(新手)请求
              * @param callBack
